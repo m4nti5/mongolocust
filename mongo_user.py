@@ -64,6 +64,8 @@ class MongoUser(User):
         self.db = CLIENT[DEFAULTS['DB_NAME']]
         self.collection, self.collection_secondary = None, None
         self.faker = Faker()
+        self.admin = CLIENT['admin']
+        self.config = CLIENT['config']
 
     def ensure_sharded_collection(self, coll_name, shard_key, read_preference=pymongo.read_preferences.Secondary()):
         """

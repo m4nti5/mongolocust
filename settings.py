@@ -4,9 +4,11 @@ DEFAULTS = {'DB_NAME': 'sample',
             'COLLECTION_NAME': 'documents',
             'CLUSTER_URL': f'mongodb+srv://user:password@something.mongodb.net/sample?retryWrites=true&w=majority',
             'DOCS_PER_BATCH': 100,
-            'INSERT_WEIGHT': 1,
-            'FIND_WEIGHT': 3,
-            'BULK_INSERT_WEIGHT': 1,
+            'INSERT_WEIGHT': 3,
+            'FIND_WEIGHT': 1,
+            'BULK_INSERT_WEIGHT': 2,
+            'UPDATE_WEIGHT': 3,
+            'MIGRATION_WEIGHT': 1,
             'AGG_PIPE_WEIGHT': 1}
 
 
