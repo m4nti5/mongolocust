@@ -65,10 +65,7 @@ class MongoSampleUser(MongoUser):
         """
         Executed every time a new test is started - place init code here
         """
-        # prepare the collection
-        index1 = pymongo.IndexModel([('first_name', pymongo.ASCENDING), ("last_name", pymongo.DESCENDING)],
-                                    name="idx_first_last")
-        self.collection, self.collection_secondary = self.ensure_collection(DEFAULTS['COLLECTION_NAME'], [index1])
+        self.collection, self.collection_secondary = self.ensure_sharded_collection(DEFAULTS['COLLECTION_NAME'], {'last_named': pymongo.HASHED, 'first_name': pymongo.ASCENDING})
         self.name_cache = []
 
     @mongodb_task(weight=int(DEFAULTS['INSERT_WEIGHT']))
@@ -83,7 +80,7 @@ class MongoSampleUser(MongoUser):
             if random.randint(0, 9) == 0:
                 self.name_cache[random.randint(0, len(self.name_cache) - 1)] = cached_names
 
-        self.collection.insert_one(document)
+        self.collection.with_options(write_concern=WriteConcern(w=1, j=False)).insert_one(document)
 
     @mongodb_task(weight=int(DEFAULTS['FIND_WEIGHT']))
     def find_document(self):
@@ -97,6 +94,6 @@ class MongoSampleUser(MongoUser):
 
     @mongodb_task(weight=int(DEFAULTS['BULK_INSERT_WEIGHT']), batch_size=int(DEFAULTS['DOCS_PER_BATCH']))
     def insert_documents_bulk(self):
-        self.collection.insert_many(
+        self.collection.with_options(write_concern=WriteConcern(w=1, j=False)).insert_many(
             [self.generate_new_document() for _ in
              range(int(DEFAULTS['DOCS_PER_BATCH']))])

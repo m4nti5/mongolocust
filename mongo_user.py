@@ -33,14 +33,14 @@ def mongodb_task(weight=1, batch_size=1):
                 print(e)
                 total_time = int((time.time() - start_time) * 1000)
                 for x in range(batch_size):
-                    self.environment.events.request_failure.fire(
+                    self.environment.events.request.fire(
                         request_type='mongo', name=name, response_time=total_time, exception=e, response_length=0,
                     )
             else:
                 total_time = int((time.time() - start_time) * 1000)
                 # ToDo: find a better way of signaling multiple executions to locust and move away from deprecated APIs
                 for _ in range(batch_size):
-                    self.environment.events.request_success.fire(
+                    self.environment.events.request.fire(
                         request_type='mongodb', name=name, response_time=total_time, response_length=1
                     )
 
@@ -64,6 +64,19 @@ class MongoUser(User):
         self.db = CLIENT[DEFAULTS['DB_NAME']]
         self.collection, self.collection_secondary = None, None
         self.faker = Faker()
+
+    def ensure_sharded_collection(self, coll_name, shard_key, read_preference=pymongo.read_preferences.Secondary()):
+        """
+        Define the sharded collection, return two collections objects:
+        one for default read preference, the other with the specified read preference.
+        """
+        # prepare a codec for decimal values
+        decimal_codec = DecimalCodec()
+        type_registry = TypeRegistry([decimal_codec])
+        codec_options = CodecOptions(type_registry=type_registry)
+
+        CLIENT['admin'].command({'shardCollection': DEFAULTS['DB_NAME'] + '.' + DEFAULTS['COLLECTION_NAME'], 'key': shard_key})
+        return self.db.get_collection(DEFAULTS['COLLECTION_NAME'], codec_options=codec_options), self.db.get_collection(DEFAULTS['COLLECTION_NAME'], read_preference=read_preference)
 
     def ensure_collection(self, coll_name, indexes=[], read_preference=pymongo.read_preferences.Secondary()):
         """
